@@ -4,6 +4,9 @@ import { GUI } from 'lil-gui'
 
 const canvas = document.querySelector('canvas.cube')
 
+// GUI
+const gui = new GUI().close()
+
 const CubeControls = {
  color: 0xaaffa0,
  scale: 1,
@@ -11,17 +14,6 @@ const CubeControls = {
  rotationSpeedY: 0.05,
  scaleSpeed: 0.005,
 }
-
-const SpotLight = {
- Color: 0xffffff,
- Intensity: 2,
- Angle: 0.7,
- Decay: 0,
- Distance: 10,
- Helper: false,
-}
-
-const gui = new GUI().close()
 
 const Cube = gui.addFolder('Cube')
 Cube.addColor(CubeControls, 'color').onChange((color) => {
@@ -33,6 +25,15 @@ Cube.add(CubeControls, 'scale', 0, 2).onChange((scale) => {
 Cube.add(CubeControls, 'rotationSpeedX', 0, 0.1)
 Cube.add(CubeControls, 'rotationSpeedY', 0, 0.1)
 Cube.add(CubeControls, 'scaleSpeed', 0, 0.1)
+
+const SpotLight = {
+ Color: 0xffffff,
+ Intensity: 2,
+ Angle: 0.7,
+ Decay: 0,
+ Distance: 10,
+ Helper: false,
+}
 
 const Light = gui.addFolder('Spot Light')
 Light.addColor(SpotLight, 'Color').onChange((color) => {
@@ -55,34 +56,12 @@ Light.add(SpotLight, 'Helper').onChange((helper) => {
 })
 
 
-
+// Scene, Lights and Camera
 const scene = new THREE.Scene()
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000)
-
-const sizes = {
- width: window.innerWidth,
- height: window.innerHeight
-}
-
-window.addEventListener('resize', () => {
- // Update sizes
- sizes.width = window.innerWidth
- sizes.height = window.innerHeight
-
- // Update camera
- camera.aspect = sizes.width / sizes.height
- camera.updateProjectionMatrix()
-
- // Update renderer
- renderer.setSize(sizes.width, sizes.height)
- renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-})
-
-const renderer = new THREE.WebGLRenderer({
- canvas: canvas
-})
-renderer.setSize(sizes.width, sizes.height)
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+camera.position.z = 5
+camera.position.y = 4
+camera.position.x = 4
 
 const ambientLight = new THREE.AmbientLight(0xffffff)
 ambientLight.intensity = 2
@@ -106,6 +85,7 @@ const spotLightHelper = new THREE.SpotLightHelper(spotLight)
 spotLightHelper.visible = false
 scene.add(spotLightHelper)
 
+// Geometry and Material
 const geometry = new THREE.BoxGeometry(1, 1, 1)
 const material = new THREE.MeshStandardMaterial({ color: 0xaaffa0 })
 const cube = new THREE.Mesh(geometry, material)
@@ -124,9 +104,29 @@ scene.add(plane)
 const controls = new OrbitControls(camera, canvas)
 controls.enableDamping = true
 
-camera.position.z = 5
-camera.position.y = 4
-camera.position.x = 4
+// Resize canvas on resize window
+const sizes = {
+ width: window.innerWidth,
+ height: window.innerHeight
+}
+
+window.addEventListener('resize', () => {
+ sizes.width = window.innerWidth
+ sizes.height = window.innerHeight
+
+ camera.aspect = sizes.width / sizes.height
+ camera.updateProjectionMatrix()
+
+ renderer.setSize(sizes.width, sizes.height)
+ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+})
+
+// Renderer
+const renderer = new THREE.WebGLRenderer({
+ canvas: canvas
+})
+renderer.setSize(sizes.width, sizes.height)
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 renderer.shadowMap.enabled = true
 renderer.shadowMap.type = THREE.PCFSoftShadowMap
 

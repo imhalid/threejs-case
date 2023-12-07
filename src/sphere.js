@@ -6,6 +6,7 @@ import fragmentShader from './shaders/fragment.glsl'
 
 const canvas = document.querySelector('canvas.sphere')
 
+// GUI
 const gui = new GUI().close()
 
 const ShaderVariables = {
@@ -19,7 +20,6 @@ const ShaderVariables = {
 }
 
 const Sphere = gui.addFolder('Sphere')
-
 Sphere.add(ShaderVariables, 'uWaveElevation').min(0).max(1).step(0.001).name('Wave Elevation').onChange(() => {
  material.uniforms.uWaveElevation.value = ShaderVariables.uWaveElevation
 })
@@ -81,8 +81,12 @@ DirectionLight.add(LightVariables, 'shadowMapHeight').min(0).max(4096).step(0.00
  light.shadow.mapSize.height = LightVariables.shadowMapHeight
 })
 
+// Scene, Lights and Camera
 const scene = new THREE.Scene()
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000)
+camera.position.z = 5
+camera.position.y = 4
+camera.position.x = 4
 
 const ambientLight = new THREE.AmbientLight(0xffffff)
 ambientLight.intensity = 2
@@ -108,8 +112,7 @@ light.shadow.bias = 0.0001
 
 scene.add(light);
 
-
-
+// Geometry and Material
 const geometry = new THREE.SphereGeometry(1, 32, 32)
 const material = new THREE.ShaderMaterial({
  vertexShader: vertexShader,
@@ -140,10 +143,7 @@ scene.add(plane)
 const controls = new OrbitControls(camera, canvas)
 controls.enableDamping = true
 
-camera.position.z = 5
-camera.position.y = 4
-camera.position.x = 4
-
+// Resize canvas on resize window
 
 const sizes = {
  width: window.innerWidth,
@@ -161,6 +161,7 @@ window.addEventListener('resize', () => {
  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 })
 
+// Renderer
 const renderer = new THREE.WebGLRenderer({
  canvas: canvas
 })
