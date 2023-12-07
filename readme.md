@@ -1,4 +1,4 @@
-# Sugar Technology Three.js Case
+# Three.js Case
 
 ## Setup
 Download [Node.js](https://nodejs.org/en/download/).
