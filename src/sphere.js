@@ -12,8 +12,10 @@ const ShaderVariables = {
  uWaveElevation: 0.3,
  uWaveFrequencyX: 3,
  uWaveFrequencyY: 1,
- uDepthColor: '#61ae74',
- uSurfaceColor: '#0b2310'
+ uDepthColor: '#00a3d7',
+ uSurfaceColor: '#ffffff',
+ uWaveDirection: 4,
+ wireframe: false
 }
 
 const Sphere = gui.addFolder('Sphere')
@@ -38,7 +40,46 @@ Sphere.addColor(ShaderVariables, 'uSurfaceColor').name('Surface Color').onChange
  material.uniforms.uSurfaceColor.value.set(ShaderVariables.uSurfaceColor)
 })
 
+Sphere.add(ShaderVariables, 'uWaveDirection').min(-4).max(4).step(0.001).name('Wave Direction').onChange(() => {
+ material.uniforms.uWaveDirection.value = ShaderVariables.uWaveDirection
+})
 
+Sphere.add(ShaderVariables, 'wireframe').name('Wireframe').onChange(() => {
+ material.wireframe = ShaderVariables.wireframe
+})
+
+
+const LightVariables = {
+ lightX: 1,
+ lightY: 3,
+ lightZ: 1,
+ shadowLeft: -70,
+ shadowRight: 70,
+ shadowTop: 70,
+ shadowBottom: -70,
+ shadowMapWidth: 1024,
+ shadowMapHeight: 1024
+}
+
+const DirectionLight = gui.addFolder('Direction Light')
+
+DirectionLight.add(LightVariables, 'lightX').min(-10).max(10).step(0.001).name('Light X').onChange(() => {
+ light.position.x = LightVariables.lightX
+})
+DirectionLight.add(LightVariables, 'lightY').min(-10).max(10).step(0.001).name('Light Y').onChange(() => {
+ light.position.y = LightVariables.lightY
+})
+DirectionLight.add(LightVariables, 'lightZ').min(-10).max(10).step(0.001).name('Light Z').onChange(() => {
+ light.position.z = LightVariables.lightZ
+})
+
+DirectionLight.add(LightVariables, 'shadowMapWidth').min(0).max(4096).step(0.001).name('Shadow Map Width').onChange(() => {
+ light.shadow.mapSize.width = LightVariables.shadowMapWidth
+})
+
+DirectionLight.add(LightVariables, 'shadowMapHeight').min(0).max(4096).step(0.001).name('Shadow Map Height').onChange(() => {
+ light.shadow.mapSize.height = LightVariables.shadowMapHeight
+})
 
 const scene = new THREE.Scene()
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000)
@@ -47,23 +88,26 @@ const ambientLight = new THREE.AmbientLight(0xffffff)
 ambientLight.intensity = 2
 scene.add(ambientLight)
 
-const spotLight = new THREE.SpotLight(0xffffff)
-spotLight.position.set(0, 6, 0)
-spotLight.angle = Math.PI / 4
-spotLight.penumbra = 0.05
-spotLight.decay = 0
-spotLight.distance = 10
-spotLight.intensity = 2
-spotLight.angle = 0.7
-spotLight.castShadow = true
+const light = new THREE.DirectionalLight(0xdfebff, 1);
+light.position.set(1, 3, 1);
 
-spotLight.shadow.mapSize.width = 1024
-spotLight.shadow.mapSize.height = 1024
-scene.add(spotLight)
+light.castShadow = true;
 
-const spotLightHelper = new THREE.SpotLightHelper(spotLight)
-spotLightHelper.visible = false
-scene.add(spotLightHelper)
+light.shadow.mapSize.width = 1024;
+light.shadow.mapSize.height = 1024;
+
+const lightPosition = 90
+light.shadow.camera.left = -lightPosition;
+light.shadow.camera.right = lightPosition;
+light.shadow.camera.top = lightPosition;
+light.shadow.camera.bottom = -lightPosition;
+light.shadow.camera.near = 0.5;
+light.shadow.camera.far = 500;
+light.shadow.camera.zoom = 1;
+light.shadow.bias = 0.0001
+
+scene.add(light);
+
 
 
 const geometry = new THREE.SphereGeometry(1, 32, 32)
@@ -76,10 +120,10 @@ const material = new THREE.ShaderMaterial({
   uWaveFrequency: { value: new THREE.Vector2(ShaderVariables.uWaveFrequencyX, ShaderVariables.uWaveFrequencyY) },
   uDepthColor: { value: new THREE.Color(ShaderVariables.uDepthColor) },
   uSurfaceColor: { value: new THREE.Color(ShaderVariables.uSurfaceColor) },
+  uWaveDirection: { value: 4 }
  },
 })
 
-// material.wireframe = true
 const sphere = new THREE.Mesh(geometry, material)
 sphere.position.y = 1
 sphere.castShadow = true
@@ -97,6 +141,8 @@ const controls = new OrbitControls(camera, canvas)
 controls.enableDamping = true
 
 camera.position.z = 5
+camera.position.y = 4
+camera.position.x = 4
 
 
 const sizes = {
@@ -105,15 +151,12 @@ const sizes = {
 }
 
 window.addEventListener('resize', () => {
- // Update sizes
  sizes.width = window.innerWidth
  sizes.height = window.innerHeight
 
- // Update camera
  camera.aspect = sizes.width / sizes.height
  camera.updateProjectionMatrix()
 
- // Update renderer
  renderer.setSize(sizes.width, sizes.height)
  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 })
@@ -127,7 +170,31 @@ renderer.shadowMap.enabled = true
 renderer.shadowMap.type = THREE.PCFSoftShadowMap
 
 const clock = new THREE.Clock()
+
+const mouse = new THREE.Vector2()
+
+window.addEventListener('mousemove', (event) => {
+ mouse.x = event.clientX / sizes.width * 2 - 1
+ mouse.y = - (event.clientY / sizes.height) * 2 + 1
+})
+
+const raycaster = new THREE.Raycaster()
+
 function animate() {
+ raycaster.setFromCamera(mouse, camera)
+
+ const intersects = raycaster.intersectObject(sphere);
+ if (intersects.length > 0) {
+  material.uniforms.uWaveElevation.value = 0.5
+  material.uniforms.uDepthColor.value.set('#ffaa00')
+  material.uniforms.uSurfaceColor.value.set('#aa2222')
+  material.uniforms.uWaveDirection.value = -4
+ } else {
+  material.uniforms.uWaveElevation.value = ShaderVariables.uWaveElevation
+  material.uniforms.uDepthColor.value.set(ShaderVariables.uDepthColor)
+  material.uniforms.uSurfaceColor.value.set(ShaderVariables.uSurfaceColor)
+  material.uniforms.uWaveDirection.value = ShaderVariables.uWaveDirection
+ }
 
  const elapsedTime = clock.getElapsedTime()
 

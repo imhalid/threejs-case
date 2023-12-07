@@ -125,6 +125,8 @@ const controls = new OrbitControls(camera, canvas)
 controls.enableDamping = true
 
 camera.position.z = 5
+camera.position.y = 4
+camera.position.x = 4
 renderer.shadowMap.enabled = true
 renderer.shadowMap.type = THREE.PCFSoftShadowMap
 
